@@ -25,8 +25,9 @@ def sigmoid(Z):
     ########################### YOUR CODE HERE ################################
     
     # Compute Z_hat, avoid using a loop, otherwise it will be very slow
+    Z_hat = 1.0 / (1.0 + np.exp(-1.0 * Z))
     
-    raise NotImplementedError
+    #raise NotImplementedError
     ###########################################################################
     
     return Z_hat
@@ -52,7 +53,8 @@ def sigmoid_grad(Z):
     
     # Compute Z_grad, avoid using a loop, otherwise it will be very slow
     
-    raise NotImplementedError
+    #raise NotImplementedError
+    Z_grad = np.multiply(Z, 1 - Z)
     ###########################################################################
     
     return Z_grad   
@@ -83,9 +85,11 @@ class Linear:
         ########################### YOUR CODE HERE #############################
     
         # Initialize the weight matrix W and bias vector b appropriately
-        # self.W = ... and self.b = ...        
+        self.W = np.random.random((self.num_inputs, self.num_outputs))
 
-        raise NotImplementedError
+        self.b = np.random.random((self.num_outputs, 1))
+
+        #raise NotImplementedError
         ########################################################################
     
     
@@ -111,12 +115,14 @@ class Linear:
         ########################### YOUR CODE HERE #############################
     
         # Compute the pre-activation outputs pre_acts      
-        
-        
+        #self.act(X)
+        z = self.act(self.input)
+        z_grad = self.act_grad(z)
         # Apply activations to pre_acts using self.act(pre_acts)      
-            
+        m = np.matmul(X, self.W) + self.b.T
+        self.out = self.act(m)
 
-        raise NotImplementedError
+        #raise NotImplementedError
         ########################################################################
         
         return self.out

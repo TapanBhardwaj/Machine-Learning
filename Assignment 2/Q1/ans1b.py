@@ -10,6 +10,9 @@ import numpy as np
 from cvxopt import matrix, solvers
 from sklearn.model_selection import train_test_split
 
+# stopping solvers.qp progress
+solvers.options["show_progress"] = False
+
 
 def linear_kernel(x1, x2):
     """
@@ -67,24 +70,20 @@ def svm_train(X, Y, kernel=linear_kernel):
     solution = solvers.qp(P, q, G, h, A, b)  # using same name of variables as given in http://cvxopt.org/examples/
     alphas = np.array(solution['x'])
 
-    # weight array from alphas
-
-    # weight = np.zeros((n, 1))
-    # for i in range(n):
-    #     weight += alphas[i] * Y[i] * X[i]
-
-    weight = np.sum(alphas * Y * X, axis=0)
-
     # bias term evaluation
 
-    # finding min when y[i] = -1
+    # finding min when y[i] = 1
     min_list = []
     max_list = []
+
     for i in range(n):
+        SUM = 0
+        for j in range(n):
+            SUM += alphas[j] * Y[j] * kernel(X[j], X[i])
         if Y[i] == 1:
-            min_list.append(np.matmul(weight.T, X[i].T))
+            min_list.append(SUM)
         else:
-            max_list.append(np.matmul(weight.T, X[i].T))
+            max_list.append(SUM)
 
     bias = - 0.5 * (min(min_list) + max(max_list))
 
@@ -184,10 +183,7 @@ if __name__ == '__main__':
     counter = 0
     for i in range(len(X_train)):
         label, _ = svm_predict(X_train, Y_train, X_train[i], alphas, b)
-        actual = -1
-        if Y_train[i] == 1:
-            actual = 1
-        if label == actual:
+        if label == Y_train[i]:
             counter += 1
 
     accuracy = 100 * counter / len(X_train)
@@ -198,10 +194,7 @@ if __name__ == '__main__':
     counter = 0
     for i in range(len(X_test)):
         label, _ = svm_predict(X_train, Y_train, X_test[i], alphas, b)
-        actual = -1
-        if Y_test[i] == 1:
-            actual = 1
-        if label == actual:
+        if label == Y_test[i]:
             counter += 1
 
     accuracy = 100 * counter / len(X_test)

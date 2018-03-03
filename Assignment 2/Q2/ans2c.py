@@ -4,8 +4,9 @@
 #                                                                               #
 #################################################################################
 
-import numpy as np
 import ans2b as a2b
+import numpy as np
+
 
 class Net2c:
     """
@@ -31,11 +32,12 @@ class Net2c:
         #   self.output_layer = a2b.Linear(correct sizes & activations here)
         # 
         # Do not change the name of these layers
-        
-        raise NotImplementedError
+        self.input_layer = a2b.Linear(num_inputs=57, num_outputs=20)
+        self.output_layer = a2b.Linear(num_inputs=20, num_outputs=1)
+
+        # raise NotImplementedError
 
         ########################################################################
-
 
     def forward(self, X):
         """
@@ -50,7 +52,7 @@ class Net2c:
         """
         # Some useful variables
         num_examples = X.shape[0]
-        
+
         # Initialize the predictions
         preds = np.zeros((num_examples, 1))
 
@@ -58,14 +60,17 @@ class Net2c:
 
         # Run the forward pass by calling forward method of individual layers
         # in succession
+        # preds = a2b.Linear.forward(self.input_layer, X)
+        preds1 = self.input_layer.forward(X)
+        # preds = a2b.Linear.forward(self.output_layer, preds)
 
-        raise NotImplementedError
-    
+        preds = self.output_layer.forward(preds1)
+
+        # raise NotImplementedError
+
         ########################################################################
-        
-        return preds
-        
 
+        return preds
 
     def backward(self, preds, Y):
         """
@@ -84,18 +89,17 @@ class Net2c:
 
         ############################# YOUR CODE HERE ###########################
 
-        # Compute the cost
+        for i in range(len(preds)):
+            cost += 0.5 * np.square(preds[i] - Y[i])
 
-        # Compute delta term for output layer
+        delta_out = preds - Y
 
-        # Run backward pass on on layers in the correct order
+        s1 = self.output_layer.backward(delta_out)
+        s2 = self.input_layer.backward(s1)
 
-        raise NotImplementedError
-    
         ########################################################################
 
         return cost
-
 
     def step(self, learning_rate=1e-2):
         """
@@ -109,23 +113,26 @@ class Net2c:
 
         # Call the step method for each layer
 
-        raise NotImplementedError
-    
+        self.output_layer.step(learning_rate)
+        self.input_layer.step(learning_rate)
+
+
+        # raise NotImplementedError
+
         ########################################################################
-        
 
 
 ##################### DO NOT MODIFY ANYTHING BELOW THIS LINE ###################    
 
 if __name__ == '__main__':
-    
+
     # Generate some data randomly
     X = np.random.random((10, 57))
     Y = np.random.choice([0, 1], 10).reshape((-1, 1))
-    
+
     # Instantiate a network
     net = Net2c()
-    
+
     # Compute the gradients
     preds = net.forward(X)
     cost = net.backward(preds, Y)
@@ -133,7 +140,7 @@ if __name__ == '__main__':
     input_b_grad = np.copy(net.input_layer.b_grad)
     output_W_grad = np.copy(net.output_layer.W_grad)
     output_b_grad = np.copy(net.output_layer.b_grad)
-    
+
     # Check the first layer gradients for W
     eps = 1e-4
     for i in range(net.input_layer.W.shape[0]):
@@ -141,47 +148,47 @@ if __name__ == '__main__':
             # Compute positive deviation cost
             net.input_layer.W[i, j] += eps
             cost_pos = net.backward(net.forward(X), Y)
-            
+
             # Compute the negative deviation cost
             net.input_layer.W[i, j] -= 2 * eps
             cost_neg = net.backward(net.forward(X), Y)
-            
+
             # Compute the numerical gradient
             grad_calc = (cost_pos - cost_neg) / (2 * eps)
-            
+
             # Check if it is within tolerance limit
             if np.abs(grad_calc - input_W_grad[i, j]) >= eps:
                 print('Grad-Check Failed at (', i, ',', j, ') in input layer')
                 print('Backpropagation:', input_W_grad[i, j], \
                       'Actual:', grad_calc)
                 exit()
-            
+
             # Restore original W value
             net.input_layer.W[i, j] += eps
-            
+
     # Check first layer gradients for bias
     for i in range(net.input_layer.b.shape[0]):
         # Compute positive deviation cost
         net.input_layer.b[i, 0] += eps
         cost_pos = net.backward(net.forward(X), Y)
-        
+
         # Compute the negative deviation cost
         net.input_layer.b[i, 0] -= 2 * eps
         cost_neg = net.backward(net.forward(X), Y)
-        
+
         # Compute the numerical gradient
         grad_calc = (cost_pos - cost_neg) / (2 * eps)
-        
+
         # Check if it is within tolerance limit
         if np.abs(grad_calc - input_b_grad[i, 0]) >= eps:
             print('Grad-Check Failed at', i, 'in input layer')
             print('Backpropagation:', input_b_grad[i, 0], \
                   'Actual:', grad_calc)
             exit()
-        
+
         # Restore original b value
         net.input_layer.b[i, 0] += eps
-    
+
     # Check the output layer gradients for W
     eps = 1e-4
     for i in range(net.output_layer.W.shape[0]):
@@ -189,46 +196,45 @@ if __name__ == '__main__':
             # Compute positive deviation cost
             net.output_layer.W[i, j] += eps
             cost_pos = net.backward(net.forward(X), Y)
-            
+
             # Compute the negative deviation cost
             net.output_layer.W[i, j] -= 2 * eps
             cost_neg = net.backward(net.forward(X), Y)
-            
+
             # Compute the numerical gradient
             grad_calc = (cost_pos - cost_neg) / (2 * eps)
-            
+
             # Check if it is within tolerance limit
             if np.abs(grad_calc - output_W_grad[i, j]) >= eps:
                 print('Grad-Check Failed at (', i, ',', j, ') in output layer')
                 print('Backpropagation:', output_W_grad[i, j], \
                       'Actual:', grad_calc)
                 exit()
-            
+
             # Restore original W value
             net.output_layer.W[i, j] += eps
-            
+
     # Check output layer gradients for bias
     for i in range(net.output_layer.b.shape[0]):
         # Compute positive deviation cost
         net.output_layer.b[i, 0] += eps
         cost_pos = net.backward(net.forward(X), Y)
-        
+
         # Compute the negative deviation cost
         net.output_layer.b[i, 0] -= 2 * eps
         cost_neg = net.backward(net.forward(X), Y)
-        
+
         # Compute the numerical gradient
         grad_calc = (cost_pos - cost_neg) / (2 * eps)
-        
+
         # Check if it is within tolerance limit
         if np.abs(grad_calc - output_b_grad[i, 0]) >= eps:
             print('Grad-Check Failed at', i, 'in output layer')
             print('Backpropagation:', output_b_grad[i, 0], \
                   'Actual:', grad_calc)
             exit()
-        
+
         # Restore original b value
         net.output_layer.b[i, 0] += eps
-        
-    
+
     print('Grad-Check Successful')

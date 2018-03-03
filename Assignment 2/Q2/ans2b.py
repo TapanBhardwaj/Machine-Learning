@@ -5,6 +5,7 @@
 #################################################################################
 
 import numpy as np
+import math
 
 
 def sigmoid(Z):
@@ -25,8 +26,9 @@ def sigmoid(Z):
     ########################### YOUR CODE HERE ################################
     
     # Copy your implementation from Ans 2(a) here
+    Z_hat = 1.0 / (1.0 + np.exp(-1.0 * Z))
     
-    raise NotImplementedError
+    #raise NotImplementedError
     ###########################################################################
     
     return Z_hat
@@ -51,8 +53,12 @@ def sigmoid_grad(Z):
     ########################### YOUR CODE HERE ################################
     
     # Copy your implementation from Ans 2(a) here
+    Z_grad = np.multiply(Z, 1-Z)
+    # ex = math.exp(1)
+    # Z_grad = 1 / (2 + ex ** (-Z) + ex ** (Z))
+        #(Z) * (1.0 - (Z))
     
-    raise NotImplementedError
+    #raise NotImplementedError
     ###########################################################################
     
     return Z_grad   
@@ -82,9 +88,15 @@ class Linear:
         
         ########################### YOUR CODE HERE #############################
     
-        # Copy your implementation from Ans 2(a) here      
+        # Copy your implementation from Ans 2(a) here
+        #self.W = np.ones((num_inputs, num_outputs))
+        self.W = np.random.random((self.num_inputs, self.num_outputs))
 
-        raise NotImplementedError
+        #Add bias also
+        #self.b = np.ones((num_outputs, 1))
+        self.b = np.random.random((self.num_outputs, 1))
+
+        #raise NotImplementedError
         ########################################################################
     
     
@@ -110,8 +122,27 @@ class Linear:
         ########################### YOUR CODE HERE #############################
     
         # Copy your implementation from ans2a here
+        # z = self.act(self.input)
+        # z_grad = self.act_grad(z)
 
-        raise NotImplementedError
+        #m = X.dot(self.W)
+        m = np.matmul(X, self.W) + self.b.T
+        self.out = self.act(m)
+        # print(len(m))
+        # t = m[0]
+        #
+        # print(t.shape)
+        # print(self.b.shape)
+        #return
+
+        # for row in range(len(m)):
+        #     t = m[row]
+        #     t = t.reshape(self.b.shape)
+        #     self.out[row] = sigmoid(t + self.b)[0]
+
+        #self.out = m +
+
+        #raise NotImplementedError
         ########################################################################
         
         return self.out
@@ -131,17 +162,61 @@ class Linear:
         """
         # Some useful variables
         num_examples = delta_out.shape[0]
-        
+
         # Initialize the variables
         self.W_grad = np.zeros(self.W.shape)
         self.b_grad = np.zeros(self.b.shape)
         delta_in = np.zeros((num_examples, self.num_inputs))
 
+
         ########################### YOUR CODE HERE #############################
     
         # Compute self.W_grad, self.b_grad and delta_in
 
-        raise NotImplementedError
+        # print('deltain',delta_in.shape)
+        # print('w',self.W.shape)
+        # print('deltaout',delta_out.shape)
+        # print('self.input',self.input.shape)
+        # print('self.out',self.out.shape)
+
+        intermediate_mat = np.matmul(self.input, self.W)
+
+        m1 = self.act_grad(self.act((intermediate_mat + self.b.T))) * delta_out
+
+
+        #m1 = delta_out.dot(self.W.T)
+        #m1 = delta_out.dot(sigmoid_grad(sigmoid(self.W.T + self.b)))
+        #delta_in = np.multiply(m1, sigmoid_grad(sigmoid(self.input[i])))
+        delta_in = np.dot(m1, self.W.T)
+        #delta_in = np.multiply(m1, self.input[i])
+
+        #a = np.array((self.input[i])).T
+        #print('kjn r', a.shape)
+        #a = a.reshape(1,self.W.T.shape[1])
+        # print(sigmoid(a).shape)
+        # print(delta_out.shape)
+        # delta_out = delta_out.reshape(1,delta_out.shape[0])
+
+        self.W_grad = np.matmul(self.input.T, m1)
+        #b1 = delta_out.T.dot(sigmoid(a))
+        # if np.shape(a)[1] == 57:
+        #     b = delta_out.dot(sigmoid(a))
+        #print('bbefore',b.shape)
+
+        #b = b.reshape(self.W_grad.shape)
+        #b1 = b1.T
+        #print('bafter',b.shape)
+        #self.W_grad += b1#/num_examples
+            #np.dot(self.out.T, sigmoid_grad(sigmoid(self.input)))
+        # if delta_out.shape[1] == 1:
+        #     self.b_grad += delta_out#[0]/num_examples
+        # else:
+        #     self.b_grad += delta_out[0][0]#/num_examples
+
+        self.b_grad[:, 0] = m1.sum(axis=0)
+
+
+        #raise NotImplementedError
         ########################################################################
         
         return delta_in
@@ -160,7 +235,11 @@ class Linear:
     
         # Update self.W and self.b based on self.W_grad and self.b_grad
 
-        raise NotImplementedError
+        self.W -= learning_rate * self.W_grad
+        self.b -= learning_rate * self.b_grad
+        #print(self.W_grad)
+
+        #raise NotImplementedError
     
         ########################################################################
         

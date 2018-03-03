@@ -71,19 +71,19 @@ def svm_train(X, Y, c, kernel=linear_kernel):
     solution = solvers.qp(P, q, G, h, A, b)  # using same name of variables as given in http://cvxopt.org/examples/
     alphas = np.array(solution['x'])
 
-    # weight array from alphas
-    weight = np.sum(alphas * Y * X, axis=0)
-
     # bias term evaluation
 
-    # finding min when y[i] = -1
+    # finding min when y[i] = 1
     min_list = []
     max_list = []
     for i in range(n):
+        SUM = 0
+        for j in range(n):
+            SUM += alphas[j] * Y[j] * kernel(X[j], X[i])
         if Y[i] == 1:
-            min_list.append(np.matmul(weight.T, X[i].T))
+            min_list.append(SUM)
         else:
-            max_list.append(np.matmul(weight.T, X[i].T))
+            max_list.append(SUM)
 
     bias = - 0.5 * (min(min_list) + max(max_list))
 

@@ -10,7 +10,6 @@ def training(X, Y, iteration=100):
 
     # initializing weight vector and bias
     W = np.zeros((np.shape(X)[1], 1))
-    print("adaasa", np.matmul(W.T, X[1].reshape(57, 1)))
     b = 0
     for i in range(iteration):
         miss = 0
@@ -32,8 +31,7 @@ def training(X, Y, iteration=100):
 
 
 def plot_iter_vs_misclassify():
-    # blue dot, green dot
-    plt.plot(MIS_CLASSIFICATIONS, "ro")
+    plt.plot(MIS_CLASSIFICATIONS, 'og-')
 
     plt.grid()  # grid is on
     plt.xlabel("Iteration No.")
@@ -52,8 +50,6 @@ if __name__ == '__main__':
 
     Y = training_data[:, -1:]
     X = training_data[:, :-1]
-    print(type(X[0]), np.shape(X[0]))
-    print(X[1].reshape(57, 1), np.shape(X[1].reshape(57, 1)))
 
     training(X, Y, 100)
 

@@ -1,41 +1,45 @@
 ################################################################################
 #                                                                              #
-#                           Code for question 1(b)                             #
+#                           Code for question 1(c)                             #
 #                                                                              #
 ################################################################################
 
+import random
+import copy
 import ans1a as a1a
-import matplotlib.pyplot as plt
 import numpy as np
 from cvxopt import matrix, solvers
 from sklearn.model_selection import train_test_split
+
+# stopping solvers.qp progress
+solvers.options["show_progress"] = False
 
 
 def linear_kernel(x1, x2):
     """
         linear_kernel(ndarray, ndarray) -> float
-        
+
         Computes the linear kernel of the specified examples.
-        
+
         x1: (1, num_features) Input vector
         x2: (1, num_features) Input vector
-        
+
         Returns: value
             value: The kernel value computed by applying the linear kernel
     """
     return np.matmul(x1, x2.T)
 
 
-def svm_train(X, Y, kernel=linear_kernel):
+def svm_train(X, Y, c, kernel=linear_kernel):
     """
         svm_train(ndarray, ndarray, function) -> ndarray, float
-        
+
         Trains the hard SVM on provided data.
-        
+
         X: (num_examples, num_features) Input feature matrix
         Y: (num_examples, 1) Labels
         kernel: Function that computes kernel(x1, x2)
-        
+
         Returns: (alphas, b)
             alphas: (num_examples, 1) alphas obtained by solving SVM
             b: bias term for SVM
@@ -45,7 +49,7 @@ def svm_train(X, Y, kernel=linear_kernel):
 
     ############################## YOUR CODE HERE ##############################
 
-    # Prepare your optimization problem here. 
+    # Prepare your optimization problem here.
     # Install cvxopt by using:
     #   pip install cvxopt
     # Use cvxopt (http://cvxopt.org/examples/tutorial/qp.html) to solve it.
@@ -59,8 +63,8 @@ def svm_train(X, Y, kernel=linear_kernel):
 
     P = matrix(P)
     q = matrix(-np.ones((n, 1)))
-    G = matrix(-np.eye(n))
-    h = matrix(np.zeros(n))
+    G = matrix(np.vstack((-np.eye(n), np.eye(n))))
+    h = matrix(np.hstack((np.zeros(n), np.ones(n) * c)))  # added condition for soft svm
     A = matrix(Y.reshape(1, -1))
     b = matrix(np.zeros(1))
 
@@ -68,11 +72,6 @@ def svm_train(X, Y, kernel=linear_kernel):
     alphas = np.array(solution['x'])
 
     # weight array from alphas
-
-    # weight = np.zeros((n, 1))
-    # for i in range(n):
-    #     weight += alphas[i] * Y[i] * X[i]
-
     weight = np.sum(alphas * Y * X, axis=0)
 
     # bias term evaluation
@@ -95,16 +94,16 @@ def svm_predict(X_train, Y_train, X, alphas, b, kernel=linear_kernel):
     """
         svm_predict(ndarray, ndarray, ndarray, ndarray, float, function) -> \
                                                          float, float
-        
+
         Predicts the output labels Y based on input X and trained SVM
-        
+
         X_train: (num_examples, num_features) Training feature matrix
         Y_train: (num_examples, 1) Training labels
         X: (1, num_features) Features of input test example
         alphas: (num_examples, 1) alphas obtained by training SVM
         b: Bias term
         kernel: Kernel function to use (same as svm_train)
-        
+
         Returns: (Y, fval)
             Y: Predicted label {+1, -1} for X
             fval: The value of function which was thresholded to get Y
@@ -132,43 +131,6 @@ def svm_predict(X_train, Y_train, X, alphas, b, kernel=linear_kernel):
     return Y, fval
 
 
-def show_decision_boundary(X, Y, X_train, Y_train, alphas, b, \
-                           kernel=linear_kernel):
-    """
-        show_decision_boundary(ndarray, ndarray, ndarray, ndarray, ndarray, \
-                                        float, function) -> None
-    
-        Shows decision boundary by plotting regions of positive and negative
-        classes
-        
-        X: (num_examples, num_features) Feature matrix
-        Y: (num_examples, 1) Label matrix
-        X_train: (num_train_examples, 1) Feature matrix used for training
-        Y_train: (num_train_examples, 1) Labels from training set
-        alphas: (num_train_examples, 1) alphas obtained by training SVM
-        b: Bias term
-        kernel: Kernel function to use (same as svm_train)
-    """
-    # Some useful variables
-    n, d = X.shape
-
-    # Obtain the minimum and maximum coordinates
-    x_min = np.min(X[:, 0])
-    x_max = np.max(X[:, 0])
-    y_min = np.min(X[:, 1])
-    y_max = np.max(X[:, 1])
-
-    # Plot the prediction map
-    colors = ['rs', 'bs']
-    for x in np.arange(x_min, x_max, 0.2).tolist():
-        for y in np.arange(y_min, y_max, 0.2).tolist():
-            label, _ = svm_predict(X_train, Y_train, np.asarray([[x, y]]), \
-                                   alphas, b, kernel)
-            plt.plot(x, y, colors[int((label + 1) / 2)])
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.show()
-
-
 if __name__ == '__main__':
     # Use ans1a to generate synthetic data as mentioned in question 1(b)
     # Now use data_gen to generate synthetic data as specified in question 1(a)
@@ -177,35 +139,33 @@ if __name__ == '__main__':
     # Split into train_data [80%] and test_data [20%]
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=0)
 
-    # Use svm_train to train on train_data using linear_kernel
-    alphas, b = svm_train(X_train, Y_train)
-
     # Use svm_predict to obtain accuracy on train_data
-    counter = 0
-    for i in range(len(X_train)):
-        label, _ = svm_predict(X_train, Y_train, X_train[i], alphas, b)
-        actual = -1
-        if Y_train[i] == 1:
-            actual = 1
-        if label == actual:
-            counter += 1
+    for C in [0.1, 1, 10]:
+        for p in [0, 0.1, 0.3]:
+            r = random.uniform(0, 1)
+            Y_dash = copy.deepcopy(Y_train)
 
-    accuracy = 100 * counter / len(X_train)
-    print("Percentage accuracy of train data is {}%".format(accuracy))
+            for k in range(len(Y_dash)):
+                if r <= p:
+                    Y_dash[k] = -np.sign(Y_train[k])  # flipping the label
 
-    # Use svm_predict to obtain accuracy on test_data
+            # Use svm_train to train on train_data using linear_kernel
+            Y_dash = Y_dash.astype(np.double)
+            alphas, b = svm_train(X_train, Y_dash, C)
 
-    counter = 0
-    for i in range(len(X_test)):
-        label, _ = svm_predict(X_train, Y_train, X_test[i], alphas, b)
-        actual = -1
-        if Y_test[i] == 1:
-            actual = 1
-        if label == actual:
-            counter += 1
+            count = 0
+            for i in range(0, len(Y_train)):
+                actual_label, _ = svm_predict(X_train, Y_dash, X_train[i], alphas, b)
 
-    accuracy = 100 * counter / len(X_test)
-    print("Percentage accuracy of test data is {}%".format(accuracy))
+                if actual_label == Y_train[i]:
+                    count = count + 1
 
-    # Show the decision region using show_decision_boundary
-    show_decision_boundary(X, Y, X_train, Y_train, alphas, b)
+            print("For C = {} and p = {}, Training accuracy is {}%".format(C, p, 100 * count / len(Y_train)))
+
+            count = 0
+            for i in range(0, len(Y_test)):
+                actual_label, _ = svm_predict(X_train, Y_dash, X_test[i], alphas, b)
+                if actual_label == Y_test[i]:
+                    count = count + 1
+
+            print("For C = {} and p = {}, Test accuracy is {}%".format(C, p, 100 * count / len(Y_test)))
